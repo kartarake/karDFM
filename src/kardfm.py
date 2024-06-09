@@ -4,7 +4,8 @@ import os
 from errorlib import *
 
 kardfm_supports = [
-    "json"
+    "json",
+    "txt"
 ]
 
 class kardfm:
@@ -41,6 +42,11 @@ class kardfm:
             with open(docpath, "w") as f:
                 json.dump(None, f)
 
+        elif doctype == "txt":
+            docpath = self.path + docname + ".txt"
+            with open(docpath, "w") as f:
+                f.write("")
+
         with open(self.path + "kardfm_camp\\docdata.json","r") as f:
             data = json.load(f)
 
@@ -71,6 +77,10 @@ class kardfm:
             with open(self.path + docname + ".json") as f:
                 self.data = json.load(f)
 
+        elif doctype == "txt":
+            with open(self.path + docname + ".txt") as f:
+                self.data = f.read()
+
         self.dfname = docname
         self.dftype = doctype
 
@@ -84,6 +94,9 @@ class kardfm:
         
     def savedoc(self):
         if self.dftype == "json":
-            print(self.path + self.dfname + ".json")
             with open(self.path + self.dfname + ".json", "w") as f:
                 json.dump(self.data, f, indent = 3)
+        
+        elif self.dftype == "txt":
+            with open(self.path + self.dfname + ".txt", "w") as f:
+                f.write(self.data)
