@@ -73,3 +73,17 @@ class kardfm:
 
         self.dfname = docname
         self.dftype = doctype
+
+    def fetchdoclist(self):
+        with open(self.docdatapath, "r") as f:
+            return tuple(json.load(f).keys())
+        
+    def fetchdocdata(self):
+        with open(self.docdatapath, "r") as f:
+            return json.load(f)
+        
+    def savedoc(self):
+        if self.dftype == "json":
+            print(self.path + self.dfname + ".json")
+            with open(self.path + self.dfname + ".json", "w") as f:
+                json.dump(self.data, f, indent = 3)
