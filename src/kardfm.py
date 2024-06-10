@@ -100,3 +100,15 @@ class kardfm:
         elif self.dftype == "txt":
             with open(self.path + self.dfname + ".txt", "w") as f:
                 f.write(self.data)
+    
+    def renamedoc(self, oldname, newname):
+        if not (type(oldname) == str and type(newname) == str):
+            raise karDFM_TypeError("Only string data type is accepted for oldname & newname arg")
+        
+        if oldname == self.dfname:
+            self.dfname = newname
+
+        if not oldname in self.fetchdoclist():
+            raise karDFM_DocNotFoundError(f"DocNotFoundError : The document {oldname} doesn't exist.")
+        
+        os.rename(self.path + oldname + "." + self.dftype, self.path + newname + "." + self.dftype)
