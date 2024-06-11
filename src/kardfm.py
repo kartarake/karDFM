@@ -26,7 +26,7 @@ class kardfm:
         self.dfname = None
         self.dftype = None
 
-    def createdoc(self, docname, doctype="json"):
+    def createdoc(self, docname, doctype="json") -> None:
         if not (type(docname) == str):
             raise karDFM_TypeError(f"TypeError : {docname} passed in for docname.\nOnly string data type is accepted for docname arg.")
         else:
@@ -57,7 +57,7 @@ class kardfm:
 
         self.loaddoc(docname)
 
-    def loaddoc(self, docname):
+    def loaddoc(self, docname) -> None:
         if not (type(docname) == str):
             raise karDFM_TypeError(f"TypeError : {docname} passed in for docname.\nOnly string data type is accepted for docname arg.")
         else:
@@ -92,6 +92,10 @@ class kardfm:
         with open(self.docdatapath, "r") as f:
             return json.load(f)
         
+    def putdocdata(self,docdata):
+        with open(self.docdatapath, "w") as f:
+            json.dump(docdata,f,indent=3)
+        
     def savedoc(self):
         if self.dftype == "json":
             with open(self.path + self.dfname + ".json", "w") as f:
@@ -112,3 +116,20 @@ class kardfm:
             raise karDFM_DocNotFoundError(f"DocNotFoundError : The document {oldname} doesn't exist.")
         
         os.rename(self.path + oldname + "." + self.dftype, self.path + newname + "." + self.dftype)
+
+    def deletedoc(self, docname):
+        if not(docname in self.fetchdoclist()):
+            karDFM_DocNotFoundError(f"Document {docname} was not found.")
+
+        docdata = self.fetchdocdata()
+        doctype = docdata[docname]["doctype"]
+        
+        if docname == self.dfname:
+            self.dfname = None
+            self.dftype = None
+            self.data = None
+
+        del docdata[docname]
+        self.putdocdata(docdata)
+
+        os.remove(self.path + docname + "." + doctype)
