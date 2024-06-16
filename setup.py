@@ -7,5 +7,8 @@ setup(
     author = "kartarake",
     author_email = "kar.prahveen@gmail.com",
     url = "https://github.com/kartarake/karDFM.git",
-    license = "MIT"
+    license = "MIT",
+    requires = [
+        "pycryptodome"
+    ]
 )
