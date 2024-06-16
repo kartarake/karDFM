@@ -11,7 +11,6 @@ def fetchkey():
 
 def encrypt(data, key):
     header = b""
-    data = data.encode()
     
     cipher = ChaCha20_Poly1305.new(key=key)
     cipher.update(header)
@@ -39,4 +38,4 @@ def decrypt(data, key):
         cipher.update(header)
 
         plain = cipher.decrypt_and_verify(cipherdata, tag)
-        return plain.decode("utf-8")
+        return plain

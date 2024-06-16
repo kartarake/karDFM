@@ -1,11 +1,15 @@
 import json
+import pickle
 import os
 
 from errorlib import *
 
+import security
+
 kardfm_supports = [
     "json",
-    "txt"
+    "txt",
+    "bin"
 ]
 
 class kardfm:
@@ -46,6 +50,11 @@ class kardfm:
             docpath = self.path + docname + ".txt"
             with open(docpath, "w") as f:
                 f.write("")
+        
+        elif doctype == "bin":
+            docpath = self.path + docname + ".bin"
+            with open(docpath, "wb") as f:
+                pickle.dump(None, f)
 
         with open(self.path + "kardfm_camp\\docdata.json","r") as f:
             data = json.load(f)
@@ -80,6 +89,10 @@ class kardfm:
         elif doctype == "txt":
             with open(self.path + docname + ".txt") as f:
                 self.data = f.read()
+        
+        elif doctype == "bin":
+            with open(self.path + docname + ".bin", "rb") as f:
+                self.data = pickle.load(f)
 
         self.dfname = docname
         self.dftype = doctype
@@ -104,6 +117,10 @@ class kardfm:
         elif self.dftype == "txt":
             with open(self.path + self.dfname + ".txt", "w") as f:
                 f.write(self.data)
+
+        elif self.dftype == "bin":
+            with open(self.path + self.dfname + ".bin", "wb") as f:
+                pickle.dump(self.data, f)
     
     def renamedoc(self, oldname, newname):
         if not (type(oldname) == str and type(newname) == str):
@@ -133,3 +150,22 @@ class kardfm:
         self.putdocdata(docdata)
 
         os.remove(self.path + docname + "." + doctype)
+
+    def generate_key(self):
+        return security.fetchkey()
+    
+    def lockdoc(self, docname, key):
+        if not docname in self.fetchdoclist():
+            raise karDFM_DocNotFoundError(f"Document with name {docname} was not found.")
+        
+        docdata = self.fetchdocdata()
+        path = self.path + docname + "." + docdata[docname]["doctype"]
+
+        with open(path, "rb") as f:
+            data = f.read()
+        
+        header = "karDFM-Encrypted\n"
+        edata = security.encrypt(data,key)
+
+        with open(path, "wb") as f:
+            f.write((header+edata).encode())
