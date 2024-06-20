@@ -59,14 +59,14 @@ class kardfm:
         with open(self.path + "kardfm_camp\\docdata.json","r") as f:
             data = json.load(f)
 
-        data[docname] = {"doctype":doctype}
+        data[docname] = {"doctype":doctype,"encrypted":False}
 
         with open(self.path + "kardfm_camp\\docdata.json", 'w') as f:
             json.dump(data,f,indent=3)
 
         self.loaddoc(docname)
 
-    def loaddoc(self, docname) -> None:
+    def loaddoc(self, docname, key=None) -> None:
         if not (type(docname) == str):
             raise karDFM_TypeError(f"TypeError : {docname} passed in for docname.\nOnly string data type is accepted for docname arg.")
         else:
@@ -82,7 +82,14 @@ class kardfm:
 
         doctype = docdata[docname]["doctype"]
 
-        if doctype == "json":
+        if docdata[docname]["encrypted"] and key:
+            with open(self.path + docname + "." + doctype, "rb") as f:
+                edata = f.read().decode()
+            
+            edata = edata.lstrip('"%karDFM-Encrypted%"\n')
+            self.data = security.decrypt(edata, key).decode().strip('"')
+
+        elif doctype == "json":
             with open(self.path + docname + ".json") as f:
                 self.data = json.load(f)
 
@@ -164,8 +171,40 @@ class kardfm:
         with open(path, "rb") as f:
             data = f.read()
         
-        header = "karDFM-Encrypted\n"
+        header = '"%karDFM-Encrypted%"\n'
         edata = security.encrypt(data,key)
 
         with open(path, "wb") as f:
             f.write((header+edata).encode())
+
+        docdata = self.fetchdocdata()
+        docdata[docname]["encrypted"] = True
+        self.putdocdata(docdata)
+
+    def unlockdoc(self, docname, key):
+        if not docname in self.fetchdoclist():
+            raise karDFM_DocNotFoundError(f"Document with name {docname} was not found.")
+        
+        docdata = self.fetchdocdata()
+        path = self.path + docname + "." + docdata[docname]["doctype"]
+
+        with open(path,"rb") as f:
+            data = f.read().decode()
+
+        header = '"%karDFM-Encrypted%"\n'
+
+        if data.startswith(header):
+            data = data.lstrip(header)
+            try:
+                data = security.decrypt(data, key)
+            except ValueError:
+                raise karDFM_WrongKeyError("Wrong key has been passed (or) The encrypted data was damaged.")
+            
+            with open(path, "wb") as f:
+                f.write(data)
+
+            if docname == self.dfname:
+                self.loaddoc(docname)
+        
+        else:
+            raise karDFM_DocNotEncrypted(f"The document {docname} is not encrypted to be decrypted.")
