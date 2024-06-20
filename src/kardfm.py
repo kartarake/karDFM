@@ -20,9 +20,9 @@ class kardfm:
         self.path = path
 
         os.makedirs(path + "kardfm_camp\\", exist_ok=True)
-        with open(self.path + "kardfm_camp\\docdata.json","w") as f:
+        with open(self.path + "kardfm_camp\\metadata.json","w") as f:
             json.dump({}, f)
-        self.docdatapath = self.path + "kardfm_camp\\docdata.json"
+        self.metadatapath = self.path + "kardfm_camp\\metadata.json"
 
         self.dfmname = dfmname
         self.data = None
@@ -56,69 +56,85 @@ class kardfm:
             with open(docpath, "wb") as f:
                 pickle.dump(None, f)
 
-        with open(self.path + "kardfm_camp\\docdata.json","r") as f:
+        with open(self.path + "kardfm_camp\\metadata.json","r") as f:
             data = json.load(f)
 
         data[docname] = {"doctype":doctype,"encrypted":False}
 
-        with open(self.path + "kardfm_camp\\docdata.json", 'w') as f:
+        with open(self.path + "kardfm_camp\\metadata.json", 'w') as f:
             json.dump(data,f,indent=3)
 
         self.loaddoc(docname)
 
-    def loaddoc(self, docname, key=None) -> None:
+    def loaddoc(self, docname, key=None, return_value=False) -> None:
         if not (type(docname) == str):
             raise karDFM_TypeError(f"TypeError : {docname} passed in for docname.\nOnly string data type is accepted for docname arg.")
         else:
             pass
 
-        with open(self.docdatapath,'r') as f:
-            docdata = json.load(f)
+        with open(self.metadatapath,'r') as f:
+            metadata = json.load(f)
 
-        if not(docname in docdata):
+        if not(docname in metadata):
             raise karDFM_DocNotFoundError(f"DocNotFoundError : No document found in the name '{docname}'")
         else:
             pass
 
-        doctype = docdata[docname]["doctype"]
+        doctype = metadata[docname]["doctype"]
 
-        if docdata[docname]["encrypted"] and key:
+        if metadata[docname]["encrypted"] and not key:
+            raise karDFM_KeyNotPassed(f"There was no key passed when requesting to load an encrypted file {docname}")
+
+        elif metadata[docname]["encrypted"] and key:
             with open(self.path + docname + "." + doctype, "rb") as f:
                 edata = f.read().decode()
             
             edata = edata.lstrip('"%karDFM-Encrypted%"\n')
-            self.data = security.decrypt(edata, key).decode().strip('"')
+            data = security.decrypt(edata, key).decode().strip('"')
 
         elif doctype == "json":
             with open(self.path + docname + ".json") as f:
-                self.data = json.load(f)
+                data = json.load(f)
 
         elif doctype == "txt":
             with open(self.path + docname + ".txt") as f:
-                self.data = f.read()
+                data = f.read()
         
         elif doctype == "bin":
             with open(self.path + docname + ".bin", "rb") as f:
-                self.data = pickle.load(f)
+                data = pickle.load(f)
 
-        self.dfname = docname
-        self.dftype = doctype
+        if not return_value:
+            self.data = data        
+            self.dfname = docname
+            self.dftype = doctype
+        else:
+            return data
 
     def fetchdoclist(self):
-        with open(self.docdatapath, "r") as f:
+        with open(self.metadatapath, "r") as f:
             return tuple(json.load(f).keys())
         
-    def fetchdocdata(self):
-        with open(self.docdatapath, "r") as f:
+    def ifdocexist(self, docname):
+        if docname in self.fetchdoclist() and docname in self.fetchmetadata():
+            return True
+        else:
+            return False
+        
+    def fetchmetadata(self):
+        with open(self.metadatapath, "r") as f:
             return json.load(f)
         
-    def putdocdata(self,docdata):
-        with open(self.docdatapath, "w") as f:
-            json.dump(docdata,f,indent=3)
+    def putmetadata(self,metadata):
+        with open(self.metadatapath, "w") as f:
+            json.dump(metadata,f,indent=3)
         
     def savedoc(self, key=None):
-        docdata = self.fetchdocdata()
-        if docdata[self.dfname]["encrypted"] and key:
+        metadata = self.fetchmetadata()
+        if metadata[self.dfname]["encrypted"] and not key:
+            raise karDFM_KeyNotPassed(f"There was no key passed when requesting to load an encrypted file {self.dfname}")
+        
+        elif metadata[self.dfname]["encrypted"] and key:
             edata = security.encrypt(self.data,key)
             with open(self.path + self.dfname + "." + self.dftype, "wb") as f:
                 f.write(edata)
@@ -151,16 +167,16 @@ class kardfm:
         if not(docname in self.fetchdoclist()):
             karDFM_DocNotFoundError(f"Document {docname} was not found.")
 
-        docdata = self.fetchdocdata()
-        doctype = docdata[docname]["doctype"]
+        metadata = self.fetchmetadata()
+        doctype = metadata[docname]["doctype"]
         
         if docname == self.dfname:
             self.dfname = None
             self.dftype = None
             self.data = None
 
-        del docdata[docname]
-        self.putdocdata(docdata)
+        del metadata[docname]
+        self.putmetadata(metadata)
 
         os.remove(self.path + docname + "." + doctype)
 
@@ -171,8 +187,8 @@ class kardfm:
         if not docname in self.fetchdoclist():
             raise karDFM_DocNotFoundError(f"Document with name {docname} was not found.")
         
-        docdata = self.fetchdocdata()
-        path = self.path + docname + "." + docdata[docname]["doctype"]
+        metadata = self.fetchmetadata()
+        path = self.path + docname + "." + metadata[docname]["doctype"]
 
         with open(path, "rb") as f:
             data = f.read()
@@ -183,16 +199,16 @@ class kardfm:
         with open(path, "wb") as f:
             f.write((header+edata).encode())
 
-        docdata = self.fetchdocdata()
-        docdata[docname]["encrypted"] = True
-        self.putdocdata(docdata)
+        metadata = self.fetchmetadata()
+        metadata[docname]["encrypted"] = True
+        self.putmetadata(metadata)
 
     def unlockdoc(self, docname, key):
         if not docname in self.fetchdoclist():
             raise karDFM_DocNotFoundError(f"Document with name {docname} was not found.")
         
-        docdata = self.fetchdocdata()
-        path = self.path + docname + "." + docdata[docname]["doctype"]
+        metadata = self.fetchmetadata()
+        path = self.path + docname + "." + metadata[docname]["doctype"]
 
         with open(path,"rb") as f:
             data = f.read().decode()
@@ -211,6 +227,10 @@ class kardfm:
 
             if docname == self.dfname:
                 self.loaddoc(docname)
+            
+            metadata = self.fetchmetadata()
+            metadata[docname]["encrypted"] = False
+            self.putmetadata(metadata)
         
         else:
             raise karDFM_DocNotEncrypted(f"The document {docname} is not encrypted to be decrypted.")
