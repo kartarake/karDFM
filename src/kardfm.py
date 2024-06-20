@@ -116,8 +116,14 @@ class kardfm:
         with open(self.docdatapath, "w") as f:
             json.dump(docdata,f,indent=3)
         
-    def savedoc(self):
-        if self.dftype == "json":
+    def savedoc(self, key=None):
+        docdata = self.fetchdocdata()
+        if docdata[self.dfname]["encrypted"] and key:
+            edata = security.encrypt(self.data,key)
+            with open(self.path + self.dfname + "." + self.dftype, "wb") as f:
+                f.write(edata)
+
+        elif self.dftype == "json":
             with open(self.path + self.dfname + ".json", "w") as f:
                 json.dump(self.data, f, indent = 3)
         
