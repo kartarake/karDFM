@@ -6,12 +6,6 @@ from errorlib import *
 
 import security
 
-kardfm_supports = [
-    "json",
-    "txt",
-    "bin"
-]
-
 class kardfm:
     """## This is the object of karDFM which contains various methods to aid in file handling.
     """
@@ -39,6 +33,12 @@ class kardfm:
         
         self.dfname = None
         self.dftype = None
+
+        self.supports = [
+            "json",
+            "txt",
+            "bin"
+        ]
 
 
 
@@ -78,7 +78,12 @@ class kardfm:
         with open(self.path + "kardfm_camp\\metadata.json","r") as f:
             data = json.load(f)
 
-        data[docname] = {"doctype":doctype,"encrypted":False}
+        data[docname] = {
+            "doctype":doctype,
+            "encrypted":False,
+            "backup":False,
+            "backup-type":None
+            }
 
         with open(self.path + "kardfm_camp\\metadata.json", 'w') as f:
             json.dump(data,f,indent=3)
