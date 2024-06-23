@@ -1,5 +1,4 @@
-import json
-import pickle
+import json, pickle
 import os
 
 from errorlib import *
@@ -57,7 +56,7 @@ class kardfm:
         if not (type(docname) == str):
             raise karDFM_TypeError(f"TypeError : {docname} passed in for docname.\nOnly string data type is accepted for docname arg.")
         
-        if not (doctype in kardfm_supports):
+        if not (doctype in self.supports):
             raise karDFM_TypeDefError(f"TypeDefError : {doctype} is not supported. \nOnly pass in document types which are supported by karDFM")
 
         if doctype == "json":
@@ -82,7 +81,7 @@ class kardfm:
             "doctype":doctype,
             "encrypted":False,
             "backup":False,
-            "backup-type":None
+            "backups":[]
             }
 
         with open(self.path + "kardfm_camp\\metadata.json", 'w') as f:
