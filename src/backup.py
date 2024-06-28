@@ -1,4 +1,4 @@
-import time, os
+import time, os    
 
 def createfull(path,bpath,metadata):
     inv_path = path[::-1]
@@ -15,12 +15,17 @@ def createfull(path,bpath,metadata):
 
     with open(path,"rb") as f:
         data = f.read()
+    
+    record = [bfname, "full", bfpath]
+    metadata["backups"].append(record)
+
+    bdata = metadata + b"\n" + data
 
     path = bfpath + bfname + ".bak"
     with open(path, "wb") as f:
-        f.write(data)
+        f.write(bdata)
 
-    metadata["backups"].append(bfname)
+    return metadata
 
     
 
@@ -33,5 +38,10 @@ def loadfull(path,bpath,metadata,loadindex=-1):
     with open(bpath + dfname + "\\" + bfname + ".bak", "rb") as f:
         data = f.read()
 
+    metadata = data.decode().split("\n")[0]
+    data = data.decode().split("\n")[1:].encode()
+
     with open(path, "wb") as f:
         f.write(data)
+
+    return metadata

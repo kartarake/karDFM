@@ -3,6 +3,7 @@ import os
 
 from errorlib import *
 
+import backup
 import security
 
 class kardfm:
@@ -38,6 +39,8 @@ class kardfm:
             "txt",
             "bin"
         ]
+
+        self.backuptypes = ["full"]
 
 
 
@@ -81,6 +84,7 @@ class kardfm:
             "doctype":doctype,
             "encrypted":False,
             "backup":False,
+            "backup-type":None,
             "backups":[]
             }
 
@@ -187,12 +191,16 @@ class kardfm:
         
 
         
-    def putmetadata(self,metadata):
+    def putmetadata(self,metadata,doc=None):
         """## To save the passed in data to metadata file.
 
         ### Args:
             - `metadata (dict)`: The metadata of all files.
-        """        
+        """
+        if not doc:
+            with open(self.metadatapath, "r") as f:
+                metadata = json.load(f).update({doc:metadata})
+
         with open(self.metadatapath, "w") as f:
             json.dump(metadata,f,indent=3)
 
@@ -361,3 +369,61 @@ class kardfm:
         
         else:
             raise karDFM_DocNotEncrypted(f"The document {docname} is not encrypted to be decrypted.")
+        
+    
+
+    def initbackup(self, docname:str, butype:str):
+        metadata = self.fetchmetadata()
+
+        if not metadata["backup"]:
+            metadata["backup"] = True
+        else:
+            raise karDFM_AlreadyInit(f"Already the doc {docname} is init with backup")
+        
+        if not butype in self.backuptypes:
+            raise karDFM_TypeDefError(f"Unsupported backup type : {butype}")        
+        else:
+            metadata["backup-type"] = butype
+
+        self.putmetadata(metadata)
+
+
+    
+    def createbackup(self, docname, bupath, butype=None):
+        if not docname in self.fetchdoclist():
+            raise karDFM_DocNotFoundError(f"Doc {docname} was not found.")
+        
+        metadata = self.fetchmetadata()
+        spath = self.path + docname + metadata[docname]["doctype"]
+        
+        if metadata["backup-type"] == "full":
+            metadata = backup.createfull(spath,bupath,metadata)
+
+        self.putmetadata(metadata, doc=docname)
+
+
+
+    def loadbackup(self, bfname=None):
+        metadata = self.fetchmetadata()
+
+        if not bfname:
+            bfname = metadata[self.dfname]["backups"][-1][0]
+            i = -1
+        else:
+            i=0
+            for record in metadata[dfname]["backups"]:
+                if record[0] == bfname:
+                    break
+                else:
+                    i += 1
+        
+        dfname = bfname[:-14]
+        bftype = metadata[dfname]["backups"][i][1]
+        butype = metadata[dfname]["backup-type"]
+
+        if butype == "full":
+            path = self.path + dfname + "." + metadata[dfname]["doctype"]
+            bpath = metadata[dfname]["backups"][i][2]
+            metadata = backup.loadfull(path, bpath, metadata, i)
+        
+        self.putmetadata(metadata, doc=dfname)
