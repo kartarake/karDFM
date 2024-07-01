@@ -366,6 +366,8 @@ class kardfm:
         else:
             raise karDFM_DocNotEncrypted(f"The document {docname} is not encrypted to be decrypted.")
         
+
+        
     def createbackup(self, docname, butype, bupath):
         metadata = self.fetchmetadata()
         docmetadata = metadata[docname]
@@ -378,18 +380,13 @@ class kardfm:
         
         self.putmetadata(metadata)
 
-    def loadbackup(self, docname, n):
-        metadata = self.fetchmetadata()
-        docmetadata = metadata[docname]
+
+
+    def loadbackup(self, bakpath , docname, n):
+        mfepaths = backup.listdir(bakpath + docname + "\\")
+        mfepath  = mfepaths[-1]
+        docmetadata = backup.extractmetadata(mfepath)
 
         path = self.path + docname + "." + docmetadata["doctype"]
-        
-        bfname = docmetadata["backups"][-n][0]
-        bfpath = docmetadata["backups"][-n][2]
-        bftype = docmetadata["backups"][-n][1]
-
-        if bftype == "full":
-            docmetadata = backup.loadfull(path, bfpath, docmetadata, -n)
-
-        metadata.update({docname:docmetadata})
-        self.putmetadata(metadata)
+        backup.loadfull(path, False, docmetadata, n)
+        backup.injectmetadata(self.metadatapath, docname, docmetadata)
