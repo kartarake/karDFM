@@ -10,7 +10,7 @@ class kardfm:
     """## This is the object of karDFM which contains various methods to aid in file handling.
     """
 
-    def __init__(self, dfmname, path="local") -> None:
+    def __init__(self, dfmname:str, path:str="local") -> None:
         """## The constructor method for the class to set up folder & metadata.
 
         ### Args:
@@ -31,7 +31,7 @@ class kardfm:
         self.dfmname = dfmname
         self.data = None
         
-        self.dfname = None
+        self.docname = None
         self.dftype = None
 
         self.supports = [
@@ -44,7 +44,7 @@ class kardfm:
 
 
 
-    def createdoc(self, docname, doctype="json") -> None:
+    def createdoc(self, docname:str, doctype:str="json") -> None:
         """## To create a document / file with passed unique name. If datatype is passed then takes up that datatype or it will be json data file.
 
         ### Args:
@@ -84,7 +84,6 @@ class kardfm:
             "doctype":doctype,
             "encrypted":False,
             "backup":False,
-            "backup-type":None,
             "backups":[]
             }
 
@@ -95,7 +94,7 @@ class kardfm:
 
 
         
-    def loaddoc(self, docname, key=None, return_value=False) -> None:
+    def loaddoc(self, docname:str, key:bytes=None, return_value:bool=False) -> None:
         """## This is to load the data from a document of DFM. 
 
         ### Args:
@@ -146,14 +145,14 @@ class kardfm:
 
         if not return_value:
             self.data = data        
-            self.dfname = docname
+            self.docname = docname
             self.dftype = doctype
         else:
             return data
         
 
 
-    def fetchdoclist(self):
+    def fetchdoclist(self) -> tuple:
         """## To fetch all the names of the document created in DFM in the form of tuple.
 
         ### Returns:
@@ -164,7 +163,7 @@ class kardfm:
         
 
         
-    def ifdocexist(self, docname):
+    def ifdocexist(self, docname:str) -> bool:
         """## To check if there is a document with passed in name in DFM.
 
         ### Args:
@@ -180,7 +179,7 @@ class kardfm:
         
 
         
-    def fetchmetadata(self):
+    def fetchmetadata(self) -> dict:
         """## To fetch the metadata of all the files stored in DFM in the form of JSON / python dictionary.
 
         ### Returns:
@@ -191,7 +190,7 @@ class kardfm:
         
 
         
-    def putmetadata(self,metadata):
+    def putmetadata(self,metadata:dict) -> None:
         """## To save the passed in data to metadata file.
 
         ### Args:
@@ -202,7 +201,7 @@ class kardfm:
 
 
         
-    def savedoc(self, key=None):
+    def savedoc(self, key:bytes=None) -> None:
         """## To save the data to disk from the class's variable.
 
         ### Args:
@@ -212,29 +211,29 @@ class kardfm:
             - `karDFM_KeyNotPassed`: If it was an encrypted file but key was not passed.
         """        
         metadata = self.fetchmetadata()
-        if metadata[self.dfname]["encrypted"] and not key:
-            raise karDFM_KeyNotPassed(f"There was no key passed when requesting to load an encrypted file {self.dfname}")
+        if metadata[self.docname]["encrypted"] and not key:
+            raise karDFM_KeyNotPassed(f"There was no key passed when requesting to load an encrypted file {self.docname}")
         
-        elif metadata[self.dfname]["encrypted"] and key:
+        elif metadata[self.docname]["encrypted"] and key:
             edata = security.encrypt(self.data,key)
-            with open(self.path + self.dfname + "." + self.dftype, "wb") as f:
+            with open(self.path + self.docname + "." + self.dftype, "wb") as f:
                 f.write(edata)
 
         elif self.dftype == "json":
-            with open(self.path + self.dfname + ".json", "w") as f:
+            with open(self.path + self.docname + ".json", "w") as f:
                 json.dump(self.data, f, indent = 3)
         
         elif self.dftype == "txt":
-            with open(self.path + self.dfname + ".txt", "w") as f:
+            with open(self.path + self.docname + ".txt", "w") as f:
                 f.write(self.data)
 
         elif self.dftype == "bin":
-            with open(self.path + self.dfname + ".bin", "wb") as f:
+            with open(self.path + self.docname + ".bin", "wb") as f:
                 pickle.dump(self.data, f)
 
 
     
-    def renamedoc(self, oldname, newname):
+    def renamedoc(self, oldname:str, newname:str) -> None:
         """## To rename the document to someother name in which another document exists.
 
         ### Args:
@@ -248,8 +247,8 @@ class kardfm:
         if not (type(oldname) == str and type(newname) == str):
             raise karDFM_TypeError("Only string data type is accepted for oldname & newname arg")
         
-        if oldname == self.dfname:
-            self.dfname = newname
+        if oldname == self.docname:
+            self.docname = newname
 
         if not oldname in self.fetchdoclist():
             raise karDFM_DocNotFoundError(f"DocNotFoundError : The document {oldname} doesn't exist.")
@@ -258,7 +257,7 @@ class kardfm:
 
 
 
-    def deletedoc(self, docname):
+    def deletedoc(self, docname:str) -> None:
         """## To delete the document with the name passed in as arg from DFM.
 
         ### Args:
@@ -270,8 +269,8 @@ class kardfm:
         metadata = self.fetchmetadata()
         doctype = metadata[docname]["doctype"]
         
-        if docname == self.dfname:
-            self.dfname = None
+        if docname == self.docname:
+            self.docname = None
             self.dftype = None
             self.data = None
 
@@ -282,7 +281,7 @@ class kardfm:
 
 
 
-    def generate_key(self):
+    def generate_key(self) -> bytes:
         """## To generate a safe key and to return it. This can be used for encryption.
 
         ### Returns:
@@ -292,7 +291,7 @@ class kardfm:
 
 
     
-    def lockdoc(self, docname, key):
+    def lockdoc(self, docname:str, key:bytes) -> None:
         """## To lock the document by encrypting the data inside it.
 
         ### Args:
@@ -323,7 +322,7 @@ class kardfm:
 
 
 
-    def unlockdoc(self, docname, key):
+    def unlockdoc(self, docname:str, key:bytes) -> None:
         """## To unlock the document which has been encrypted back to normal.
 
         ### Args:
@@ -356,7 +355,7 @@ class kardfm:
             with open(path, "wb") as f:
                 f.write(data)
 
-            if docname == self.dfname:
+            if docname == self.docname:
                 self.loaddoc(docname)
             
             metadata = self.fetchmetadata()
@@ -368,21 +367,35 @@ class kardfm:
         
 
         
-    def createbackup(self, docname, butype, bupath):
+    def createbackup(self, docname:str, baktype:str, bakpath:str) -> None:
+        """To create a backup file for the docname passed.
+
+        Args:
+            docname (str): The name of the document that you want to create backup for.
+            baktype (str): The type of backup you need.
+            bakpath (str): The main backup folder where the folders for each file will be present.
+        """        
         metadata = self.fetchmetadata()
         docmetadata = metadata[docname]
 
         spath = self.path + docname + "." + docmetadata["doctype"]
 
-        if butype == "full":
-            docmetadata = backup.createfull(spath, bupath, docmetadata)
+        if baktype == "full":
+            docmetadata = backup.createfull(spath, bakpath, docmetadata)
             metadata.update({docname:docmetadata})
         
         self.putmetadata(metadata)
 
 
 
-    def loadbackup(self, bakpath , docname, n):
+    def loadbackup(self, bakpath:str , docname:str, n:int) -> None:
+        """To load up the backup file.
+
+        Args:
+            bakpath (str): The main backup folder where the folders for each file will be present.
+            docname (str): The name of the document where you want to load backup of.
+            n (int): No of backups to preceed.
+        """        
         mfepaths = backup.listdir(bakpath + docname + "\\")
         mfepath  = mfepaths[-1]
         docmetadata = backup.extractmetadata(mfepath)
