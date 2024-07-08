@@ -1,6 +1,10 @@
 import time, os, json  
 
-def createfull(path,bpath,metadata):
+def createfull(str path, str bpath, object metadata):
+    cdef str inv_path, dfname, timechar, bfname, bdata
+    cdef object record
+    cdef bytes data
+
     inv_path = path[::-1]
     dfname = inv_path.split(".",1)[1].split("\\",1)[0][::-1]
 
@@ -29,7 +33,10 @@ def createfull(path,bpath,metadata):
 
     
 
-def loadfull(path,bpath,metadata,loadindex=-1):
+def loadfull(str path, str bpath, object metadata, int loadindex=-1):
+    cdef str bfname, dfname
+    cdef bytes data
+    
     bfname = metadata["backups"][loadindex]
     dfname = bfname[:-14]
     if not bpath[-1] in ("\\","/"):
@@ -48,7 +55,9 @@ def loadfull(path,bpath,metadata,loadindex=-1):
 
 
 
-def extractmetadata(path, removefromfile=True):
+def extractmetadata(str path, removefromfile=True):
+    cdef object metadata
+
     with open(path, 'rb') as f:
         data = f.read().decode()
 
@@ -64,7 +73,7 @@ def extractmetadata(path, removefromfile=True):
 
 
 
-def injectmetadata(path, docname, data):
+def injectmetadata(str path, str docname, object data):
     with open(path, "r") as f:
         sdata = json.load(f)
 
@@ -75,7 +84,7 @@ def injectmetadata(path, docname, data):
 
 
 
-def loadfull(path, bfpath, docmetadata, n):
+def loadfull(str path, str bfpath, object docmetadata, int n):
     if not bfpath:
         bfpath = docmetadata["backups"][-n][2]
 
@@ -87,7 +96,7 @@ def loadfull(path, bfpath, docmetadata, n):
 
 
 
-def listdir(path):
+def listdir(str path):
     paths = os.listdir(path)
     paths = [path + i for i in paths]
     paths.sort()

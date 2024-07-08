@@ -52,15 +52,15 @@ class kardfm:
             - `doctype (str, optional)`: The type of datafile. Defaults to "json".
 
         ### Raises:
-            - `karDFM_TypeError`: Raises when one of the arg's data type is not correct.
-            - `karDFM_TypeDefError`: Raises when file creation of unsupported data type is requested.
+            - `TypeError`: Raises when one of the arg's data type is not correct.
+            - `ValueError`: Raises when file creation of unsupported data type is requested.
         """
 
         if not (type(docname) == str):
-            raise karDFM_TypeError(f"TypeError : {docname} passed in for docname.\nOnly string data type is accepted for docname arg.")
+            raise TypeError(f"TypeError : {docname} passed in for docname.\nOnly string data type is accepted for docname arg.")
         
         if not (doctype in self.supports):
-            raise karDFM_TypeDefError(f"TypeDefError : {doctype} is not supported. \nOnly pass in document types which are supported by karDFM")
+            raise ValueError(f"TypeDefError : {doctype} is not supported. \nOnly pass in document types which are supported by karDFM")
 
         if doctype == "json":
             docpath = self.path + docname + ".json"
@@ -103,26 +103,26 @@ class kardfm:
             - `return_value (bool, optional)`: If you want the data to be returned insted of loading it up in class's variable. Defaults to False.
 
         ### Raises:
-            - `karDFM_TypeError`: Raises when one of the arg's data type is not correct.
-            - `karDFM_DocNotFoundError`: Raises when the document name specified was not found.
-            - `karDFM_KeyNotPassed`: Raises when the key is not passed when trying to load an encrypted file.
+            - `TypeError`: Raises when one of the arg's data type is not correct.
+            - `FileNotFoundError`: Raises when the document name specified was not found.
+            - `KeyError`: Raises when the key is not passed when trying to load an encrypted file.
 
         ### Returns:
             - `data`: The data stored in that file if return_value arg is set to True.
         """        
         if not (type(docname) == str):
-            raise karDFM_TypeError(f"TypeError : {docname} passed in for docname.\nOnly string data type is accepted for docname arg.")
+            raise TypeError(f"TypeError : {docname} passed in for docname.\nOnly string data type is accepted for docname arg.")
 
         with open(self.metadatapath,'r') as f:
             metadata = json.load(f)
 
         if not(docname in metadata):
-            raise karDFM_DocNotFoundError(f"DocNotFoundError : No document found in the name '{docname}'")
+            raise FileNotFoundError(f"DocNotFoundError : No document found in the name '{docname}'")
 
         doctype = metadata[docname]["doctype"]
 
         if metadata[docname]["encrypted"] and not key:
-            raise karDFM_KeyNotPassed(f"There was no key passed when requesting to load an encrypted file {docname}")
+            raise KeyError(f"There was no key passed when requesting to load an encrypted file {docname}")
 
         elif metadata[docname]["encrypted"] and key:
             with open(self.path + docname + "." + doctype, "rb") as f:
@@ -208,11 +208,11 @@ class kardfm:
             - `key (bytes, optional)`: The key used for encryption of the file if it is encrypted file. Defaults to None.
 
         ### Raises:
-            - `karDFM_KeyNotPassed`: If it was an encrypted file but key was not passed.
+            - `KeyError`: If it was an encrypted file but key was not passed.
         """        
         metadata = self.fetchmetadata()
         if metadata[self.docname]["encrypted"] and not key:
-            raise karDFM_KeyNotPassed(f"There was no key passed when requesting to load an encrypted file {self.docname}")
+            raise KeyError(f"There was no key passed when requesting to load an encrypted file {self.docname}")
         
         elif metadata[self.docname]["encrypted"] and key:
             edata = security.encrypt(self.data,key)
@@ -241,17 +241,17 @@ class kardfm:
             - `newname (str)`: The replacement name.
 
         ### Raises:
-            - `karDFM_TypeError`: Raises if any of the arg's data type is not correct.
-            - `karDFM_DocNotFoundError`: Raises if the mentioned document was not found.
+            - `TypeError`: Raises if any of the arg's data type is not correct.
+            - `FileNotFoundError`: Raises if the mentioned document was not found.
         """        
         if not (type(oldname) == str and type(newname) == str):
-            raise karDFM_TypeError("Only string data type is accepted for oldname & newname arg")
+            raise TypeError("Only string data type is accepted for oldname & newname arg")
         
         if oldname == self.docname:
             self.docname = newname
 
         if not oldname in self.fetchdoclist():
-            raise karDFM_DocNotFoundError(f"DocNotFoundError : The document {oldname} doesn't exist.")
+            raise FileNotFoundError(f"DocNotFoundError : The document {oldname} doesn't exist.")
         
         os.rename(self.path + oldname + "." + self.dftype, self.path + newname + "." + self.dftype)
 
@@ -262,9 +262,12 @@ class kardfm:
 
         ### Args:
             - `docname (str)`: The name of the document.
-        """        
+
+        ### Raises:
+            - `FileNotFoundError`: Raises if the mentioned file name is not found.
+        """      
         if not(docname in self.fetchdoclist()):
-            karDFM_DocNotFoundError(f"Document {docname} was not found.")
+            FileNotFoundError(f"Document {docname} was not found.")
 
         metadata = self.fetchmetadata()
         doctype = metadata[docname]["doctype"]
@@ -299,10 +302,10 @@ class kardfm:
             - `key (bytes)`: The key you want to use for encryption.
 
         ### Raises:
-            - `karDFM_DocNotFoundError`: Raises if no document were to be found with passed in name.
+            - `FileNotFoundError`: Raises if no document were to be found with passed in name.
         """   
         if not docname in self.fetchdoclist():
-            raise karDFM_DocNotFoundError(f"Document with name {docname} was not found.")
+            raise FileNotFoundError(f"Document with name {docname} was not found.")
         
         metadata = self.fetchmetadata()
         path = self.path + docname + "." + metadata[docname]["doctype"]
@@ -330,12 +333,12 @@ class kardfm:
             - `key (bytes)`: The key which has been used for encryption.
 
         ### Raises:
-            - `karDFM_DocNotFoundError`: Raises if that document mentioned was not found.
-            - `karDFM_WrongKeyError`: Raises if wrong key was passed or the encrypted data was damaged.
-            - `karDFM_DocNotEncrypted`: Raises if the document passed was not encrypted to be unlocked.
+            - `FileNotFoundError`: Raises if that document mentioned was not found.
+            - `ValueError`: Raises if wrong key was passed or the encrypted data was damaged.
+            - `NotImplementedError`: Raises if the document passed was not encrypted to be unlocked.
         """        
         if not docname in self.fetchdoclist():
-            raise karDFM_DocNotFoundError(f"Document with name {docname} was not found.")
+            raise FileNotFoundError(f"Document with name {docname} was not found.")
         
         metadata = self.fetchmetadata()
         path = self.path + docname + "." + metadata[docname]["doctype"]
@@ -350,7 +353,7 @@ class kardfm:
             try:
                 data = security.decrypt(data, key)
             except ValueError:
-                raise karDFM_WrongKeyError("Wrong key has been passed (or) The encrypted data was damaged.")
+                raise ValueError("Wrong key has been passed (or) The encrypted data was damaged.")
             
             with open(path, "wb") as f:
                 f.write(data)
@@ -363,7 +366,7 @@ class kardfm:
             self.putmetadata(metadata)
         
         else:
-            raise karDFM_DocNotEncrypted(f"The document {docname} is not encrypted to be decrypted.")
+            raise NotImplementedError(f"The document {docname} is not encrypted to be decrypted.")
         
 
         
