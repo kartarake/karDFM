@@ -4,7 +4,7 @@ import os
 from errorlib import *
 
 import backup
-import security
+import src.kardfm.security as security
 
 class kardfm:
     """## This is the object of karDFM which contains various methods to aid in file handling.
@@ -367,42 +367,3 @@ class kardfm:
         
         else:
             raise NotImplementedError(f"The document {docname} is not encrypted to be decrypted.")
-        
-
-        
-    def createbackup(self, docname:str, baktype:str, bakpath:str) -> None:
-        """To create a backup file for the docname passed.
-
-        Args:
-            docname (str): The name of the document that you want to create backup for.
-            baktype (str): The type of backup you need.
-            bakpath (str): The main backup folder where the folders for each file will be present.
-        """        
-        metadata = self.fetchmetadata()
-        docmetadata = metadata[docname]
-
-        spath = self.path + docname + "." + docmetadata["doctype"]
-
-        if baktype == "full":
-            docmetadata = backup.createfull(spath, bakpath, docmetadata)
-            metadata.update({docname:docmetadata})
-        
-        self.putmetadata(metadata)
-
-
-
-    def loadbackup(self, bakpath:str , docname:str, n:int) -> None:
-        """To load up the backup file.
-
-        Args:
-            bakpath (str): The main backup folder where the folders for each file will be present.
-            docname (str): The name of the document where you want to load backup of.
-            n (int): No of backups to preceed.
-        """        
-        mfepaths = backup.listdir(bakpath + docname + "\\")
-        mfepath  = mfepaths[-1]
-        docmetadata = backup.extractmetadata(mfepath)
-
-        path = self.path + docname + "." + docmetadata["doctype"]
-        backup.loadfull(path, False, docmetadata, n)
-        backup.injectmetadata(self.metadatapath, docname, docmetadata)
