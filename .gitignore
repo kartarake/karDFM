@@ -226,3 +226,4 @@ build/
 dist/
 *.egg-info
 *.so
+src/kardfm/trun.py
