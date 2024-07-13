@@ -58,3 +58,16 @@ def createfull(str docname, str spath, str bakpath, object docmetadata) -> objec
         f.write(bdata)
 
     return docmetadata
+
+
+
+def loadfull(str path, str bakpath, object docmetadata, int n) -> None:
+    cdef str bakfpath
+
+    bakfpath = docmetadata["backups"][-n][1]
+
+    with open(bakfpath, "rb") as f:
+        bdata = f.read()
+
+    with open(path, "wb") as f:
+        f.write(bdata)
