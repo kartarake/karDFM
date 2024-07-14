@@ -1,5 +1,6 @@
 import json
 import time
+import os
 
 def combinemetadata(object docmetadata, bytes data) -> bytes:
     cdef bytes bdocmetadata, join
@@ -14,7 +15,6 @@ def combinemetadata(object docmetadata, bytes data) -> bytes:
 def extractmetadata(bytes bdata) -> object:
     cdef str sdata
     cdef object docmetadata
-    cdef bytes data
 
     sdata = bdata.decode()
     docmetadata = json.loads(sdata.split("\n", 1)[0])
@@ -61,13 +61,25 @@ def createfull(str docname, str spath, str bakpath, object docmetadata) -> objec
 
 
 
-def loadfull(str path, str bakpath, object docmetadata, int n) -> None:
-    cdef str bakfpath
+def loadfull(str path, str bakpath, str docname, int n) -> None:
+    cdef str bakfname, bakfpath, empath
+    cdef bytes data, bdata
+    cdef object paths
 
-    bakfpath = docmetadata["backups"][-n][1]
+    paths = os.listdir(bakpath + docname + "\\")
+    empath = max(paths)
+
+    with open(empath, "rb") as f:
+        bdata = f.read()
+    
+    docmetadata = extractmetadata(bdata)
+
+    bakfname = docmetadata["backups"][-n][0]
+    bakfpath = bakpath + "\\" + docname + "\\" + bakfname + ".bak"
+    removedocmetadata(bakfpath)
 
     with open(bakfpath, "rb") as f:
-        bdata = f.read()
+        data = f.read()
 
     with open(path, "wb") as f:
-        f.write(bdata)
+        f.write(data)
