@@ -3,6 +3,17 @@ import os
 from libc.stdlib cimport malloc, free
 from libc.string cimport strcpy, strlen
 
+cdef class UnderflowError(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
+        self.message = args[0]
+
+    def __repr__(self) -> str:
+        return f'UnderflowError: {self.message}'
+
+    def __str__(self) -> str:
+        return self.message
+
 cdef class strstack:
     cdef public int size
     cdef public int top
@@ -28,3 +39,12 @@ cdef class strstack:
         if self.data[self.top] == NULL:
             raise MemoryError(f"Unable to allocate memory for the string {string}")
         strcpy(self.data[self.top], string.encode("utf-8"))
+
+    cpdef str pop(self):
+        if self.top == -1:
+            raise UnderflowError("The stack no value to be poped out")
+        bstring = self.data[self.top]
+        string = bstring.decode("utf-8")
+        free(bstring)
+        self.top -= 1
+        return string
